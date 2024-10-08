@@ -1,0 +1,146 @@
+import pandas as pd
+from datetime import datetime as dt
+import win32com.client
+import pathlib
+import smtplib
+import base64
+import os
+
+# file data contains everything
+file_data='ADC nhap.xlsx'
+
+#template file need to be replicate and modify
+template='TEMPLATE (1).xlsx'
+
+scripts_location='D:/Doi soat ver3/'
+
+date_now=dt.now()
+df_template = pd.read_excel(template)
+
+# Get date 
+date_in_template=df_template.iloc[0,8].split()
+date_in_template[3]=str(date_now.day)
+date_in_template[5]=str(date_now.month)
+date_in_template[7]=str(date_now.year)
+
+date_in_template=' '.join(date_in_template)
+
+def create_excel_file(date_in_template,book_name, account_name, agency_code,agency_email,cap_bac_ds, dt_r1, dt_r2, dt_r3,dt_r4,dt_r5, redt_spu,redt_ielts, redt_ict, hh_ca_nhan, thuong_sp, tong_hh_ca_nhan,mang_luoi1,mang_luoi2,thuong_thang,thuong_chinh_sach,thuong_cap_bac,tong_thu_lao, thue_TNCN, bu_tru,thu_nhap_sau_thue,thuong_tru_1,thuong_tru_2,thuong_tru_3,bank_name, cc):
+    output_file = pathlib.Path('{}\{}.xlsx'.format(scripts_location, book_name))
+    if output_file.is_file():
+        os.remove(output_file)
+    app = win32com.client.dynamic.Dispatch("Excel.Application")
+    app.Interactive = True
+    app.Visible = True
+    wb = app.Workbooks.Open(scripts_location+template)
+    ws = wb.Worksheets("Sheet1")
+
+    # Modify date
+    ws.Range("I2").Value = date_in_template
+    ws.Range("I2").Font.Color = 192
+
+    #ws.Range("A4").Value = " Căn cứ hợp đồng hợp tác đại lý " + str(
+       # contract_number) + " ký giữa Công ty Cổ Phần Đầu tư và Dịch vụ Giáo dục (Bên A) và ông/bà " + str(
+        # book_name) + " (Bên B) ký ngày " + contract_date.strftime('%d/%m/%Y')
+
+    ws.Range("B6").Value = book_name
+    ws.Range("C6").Value = account_name
+    ws.Range("D6").Value = agency_code
+    ws.Range("E6").Value = agency_email
+    ws.Range("F6").Value = cap_bac_ds
+    ws.Range("G6").Value = dt_r1
+    ws.Range("H6").Value = dt_r2
+    ws.Range("I6").Value = dt_r3
+    ws.Range("J6").Value = dt_r4
+    ws.Range("K6").Value = dt_r5
+    ws.Range("L6").Value = redt_spu
+    ws.Range("M6").Value = redt_ielts
+    ws.Range("N6").Value = redt_ict
+    ws.Range("O6").Value = hh_ca_nhan
+    ws.Range("P6").Value = thuong_sp
+    ws.Range("Q6").Value = tong_hh_ca_nhan
+    ws.Range("R6").Value = mang_luoi1
+    ws.Range("S6").Value = mang_luoi2
+    ws.Range("T6").Value = thuong_thang
+    ws.Range("U6").Value = thuong_chinh_sach
+    ws.Range("V6").Value = thuong_cap_bac
+    ws.Range("W6").Value = tong_thu_lao
+    ws.Range("X6").Value = thue_TNCN
+    ws.Range("Y6").Value = bu_tru
+    ws.Range("Z6").Value = thu_nhap_sau_thue
+    ws.Range("AA6").Value = thuong_tru_1
+    ws.Range("AB6").Value = thuong_tru_2
+    ws.Range("AC6").Value = thuong_tru_3
+    ws.Range("I9").Value = book_name
+    ws.Range("I10").Value = account_name
+    ws.Range("I11").Value = bank_name
+    # Email
+
+    wb.SaveAs(str(output_file))
+    app.Application.Quit()
+
+    attach_file = str(output_file).replace('\\', '/')
+    email_to(agency_email, attach_file, cc)
+    # print (attach_file)
+
+def email_to(agency_email,attach_file, cc):
+    month_to_send=(date_now.month-2)
+    year_to_send=date_now.year
+    if month_to_send == 0:
+        month_to_send += 12
+        year_to_send-=1
+    date_to_replace=str(month_to_send)+'/'+str(year_to_send)
+    app = win32com.client.dynamic.Dispatch("outlook.Application")
+    mail = app.CreateItem(0)
+    mail.To = agency_email
+    mail.Subject = 'Biên bản đối soát tháng ' + date_to_replace
+    mail_body = open('email_template.html', encoding="utf-8").read().replace('{{DATE_TO_REPLACE}}',date_to_replace)
+    mail.HTMLBody = mail_body
+    mail.Attachments.Add(attach_file)
+    mail.CC = cc
+    #print(mail_body)
+    mail.Send()
+    app.Application.Quit()
+
+def modify_template(data):
+    book_name = data[1]
+    account_name = data[4]
+    agency_code = data[6]
+    agency_email = data[31]
+    cap_bac_ds = data [7]
+    dt_r1 = data[8]
+    dt_r2 = data[9]
+    dt_r3 = data[10]
+    dt_r4 = data[11]
+    dt_r5 = data[12]
+    redt_spu = data[13]
+    redt_ielts = data[14]
+    redt_ict = data[15]
+    hh_ca_nhan = data[16]
+    thuong_sp = data[17]
+    tong_hh_ca_nhan = data[18]
+    mang_luoi1 = data[19]
+    mang_luoi2 = data[20]
+    thuong_thang = data[21]
+    thuong_chinh_sach = data[22]
+    thuong_cap_bac = data[23]
+    tong_thu_lao = data[24]
+    thue_TNCN = data[25]
+    bu_tru = data[26]
+    thu_nhap_sau_thue = data[27]
+    thuong_tru_1  = data[28]
+    thuong_tru_2  = data[29]
+    thuong_tru_3  = data[30]
+    bank_name = data[5]
+    cc = data[32]
+
+    create_excel_file(date_in_template,book_name, account_name, agency_code,agency_email,cap_bac_ds, dt_r1, dt_r2, dt_r3,dt_r4,dt_r5, redt_spu,redt_ielts, redt_ict, hh_ca_nhan, thuong_sp, tong_hh_ca_nhan, mang_luoi1, mang_luoi2, thuong_thang,thuong_chinh_sach,thuong_cap_bac,tong_thu_lao, thue_TNCN,bu_tru, thu_nhap_sau_thue,thuong_tru_1,thuong_tru_2,thuong_tru_3, bank_name, cc)
+df_file_data = pd.read_excel(file_data)
+
+# count number of rows
+num_of_rows=df_file_data.shape[0]
+
+# All data from row 4 to row limit - 3
+for i in range(3, num_of_rows):
+    #print(df_file_data.iloc[i])
+    modify_template(df_file_data.iloc[i])
